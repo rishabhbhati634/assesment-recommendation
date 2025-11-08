@@ -1,0 +1,28 @@
+# render.yaml - Render spec for one-click deploy
+# Put this at the repository root (next to Dockerfile / Procfile / run.py)
+
+services:
+  - type: web
+    name: shl-recommender           # change to your desired service name
+    env: docker                     # use Dockerfile in repo
+    repo: https://github.com/your-org/your-repo  # REPLACE with your repo URL
+    branch: main                    # REPLACE if you use a different branch
+    plan: starter                   # starter (dev) or standard (prod); change as needed
+    region: oregon                  # change region if desired (oregon, ireland, singapore, etc.)
+    autoDeploy: true
+    pullRequestPreviews: false
+    buildCommand: ""                # Dockerfile handles the build
+    startCommand: ""                # Dockerfile CMD will be used
+    healthCheckPath: /health
+    envVars:
+      - key: USE_PERPLEXITY
+        value: "True"
+      - key: PERPLEXITY_MODEL
+        value: "gpt-4o-mini"
+      - key: PROCESSED_CSV
+        value: "data/processed_assessments_with_embeddings.csv"
+      - key: EMBEDDINGS_FILE
+        value: "data/assessments_embeddings.npy"
+      - key: FAISS_INDEX
+        value: "data/faiss_index.bin"
+    # Note: secrets should be created via the Render dashboard (see instructions below)
