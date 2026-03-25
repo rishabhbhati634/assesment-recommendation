@@ -311,28 +311,6 @@ For production with >1M assessments, migrate to Pinecone/Weaviate/Qdrant.
 
 ---
 
-## 🚧 Future Improvements
-
-### **Short-term (Next Sprint)**
-- [ ] Add caching for frequent queries
-- [ ] Implement user feedback loop
-- [ ] A/B testing for different prompts
-- [ ] Add more skills to entity extraction
-
-### **Medium-term (Next Quarter)**
-- [ ] Fine-tune embedding model on SHL data
-- [ ] Implement learning-to-rank model
-- [ ] Add multi-language support
-- [ ] Build analytics dashboard
-
-### **Long-term (6+ Months)**
-- [ ] Migrate to production vector DB (Pinecone)
-- [ ] Add assessment preview/comparison
-- [ ] Integrate with HRIS systems
-- [ ] Build mobile app
-
----
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please follow these steps:
