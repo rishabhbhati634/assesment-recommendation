@@ -235,36 +235,6 @@ Query 1,https://www.shl.com/...
 
 ---
 
-## 🌐 Deployment
-
-### **Deploy to Render (Recommended)**
-
-1. **Push to GitHub:**
-```bash
-git add .
-git commit -m "Ready for deployment"
-git push origin main
-```
-
-2. **Create Render Account:**
-   - Go to https://render.com
-   - Sign up with GitHub
-
-3. **Create Web Service:**
-   - Click "New +" → "Web Service"
-   - Connect your repository
-   - Configure:
-     - **Build Command:** `pip install -r requirements.txt`
-     - **Start Command:** `gunicorn backend.app:app --bind 0.0.0.0:$PORT --timeout 120`
-     - **Environment Variable:** `PERPLEXITY_API_KEY=your_key`
-
-4. **Deploy:** Click "Create Web Service"
-
-5. **Your API URL:**
-```
-https://your-app-name.onrender.com/api/v1/recommend
-```
-
 ### **Alternative Platforms**
 
 - **Railway:** Similar to Render, auto-detects Python
