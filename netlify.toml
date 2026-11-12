@@ -6,6 +6,10 @@
   # No build command — pure static HTML
   command = ""
 
+[build.environment]
+  # Netlify's mise cannot verify attestations for Python 3.11.6 (pinned by runtime.txt).
+  MISE_PYTHON_GITHUB_ATTESTATIONS = "false"
+
 # Redirect rule: catch-all SPA fallback (not strictly needed for single-page,
 # but good practice if more pages are added)
 [[redirects]]
