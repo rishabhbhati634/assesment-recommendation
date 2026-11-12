@@ -1,0 +1,25 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment variables
+.env
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+
+# Data files (large — stored in repo intentionally; remove next line to gitignore them)
+# data/
+
+# Python build artefacts
+*.egg-info/
+dist/
+build/

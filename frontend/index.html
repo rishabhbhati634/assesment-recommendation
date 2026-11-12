@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SHL Assessment Recommender</title>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:    #0057a8;
+      --brand-dk: #003f7f;
+      --accent:   #00a6e0;
+      --bg:       #f4f7fb;
+      --card:     #ffffff;
+      --border:   #e1e8f0;
+      --text:     #1a2332;
+      --muted:    #6b7a99;
+      --success:  #16a34a;
+      --warn:     #d97706;
+      --radius:   12px;
+      --shadow:   0 2px 12px rgba(0,87,168,.1);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, var(--brand), var(--accent));
+      color: #fff;
+      padding: 2.5rem 1.5rem 2rem;
+      text-align: center;
+    }
+    header .logo { font-size: 2rem; margin-bottom: .4rem; }
+    header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -.5px; }
+    header p  { margin-top: .5rem; opacity: .88; font-size: .95rem; }
+
+    /* ── Layout ── */
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    /* ── Search card ── */
+    .search-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .search-card label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: .6rem;
+      color: var(--brand);
+    }
+    .search-card textarea {
+      width: 100%;
+      height: 120px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: .9rem 1rem;
+      font-size: .97rem;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color .2s;
+    }
+    .search-card textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .search-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: .75rem 2rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+    }
+    .btn-primary:hover  { background: var(--brand-dk); }
+    .btn-primary:active { transform: scale(.97); }
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+
+    .examples {
+      font-size: .85rem;
+      color: var(--muted);
+    }
+    .examples span {
+      cursor: pointer;
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .examples span:hover { color: var(--brand); }
+
+    /* ── Status / spinner ── */
+    .status {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+    .spinner {
+      display: inline-block;
+      width: 36px; height: 36px;
+      border: 3.5px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin-bottom: .75rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Error banner ── */
+    .error-banner {
+      background: #fff1f1;
+      border: 1.5px solid #f87171;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      color: #b91c1c;
+      margin-bottom: 1.5rem;
+      font-size: .93rem;
+    }
+
+    /* ── Results header ── */
+    .results-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .results-header h2 { font-size: 1.1rem; font-weight: 700; }
+    .results-header .count {
+      background: var(--brand);
+      color: #fff;
+      border-radius: 20px;
+      padding: .15rem .75rem;
+      font-size: .82rem;
+      font-weight: 600;
+    }
+
+    /* ── Assessment card ── */
+    .assessment-card {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow);
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .assessment-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 20px rgba(0,166,224,.15);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: .9rem;
+    }
+    .card-rank {
+      flex-shrink: 0;
+      width: 30px; height: 30px;
+      background: var(--brand);
+      color: #fff;
+      border-radius: 50%;
+      font-size: .8rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-title { flex: 1; }
+    .card-title h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .card-title a {
+      color: var(--brand);
+      text-decoration: none;
+    }
+    .card-title a:hover { text-decoration: underline; }
+
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-bottom: .9rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      border-radius: 20px;
+      padding: .2rem .7rem;
+      font-size: .78rem;
+      font-weight: 500;
+    }
+    .badge-duration  { background: #eff6ff; color: #1d4ed8; }
+    .badge-remote    { background: #f0fdf4; color: var(--success); }
+    .badge-adaptive  { background: #fefce8; color: var(--warn); }
+    .badge-no        { background: #f9fafb; color: var(--muted); }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-bottom: .75rem;
+    }
+    .tag {
+      background: #e8f4fc;
+      color: var(--brand);
+      border-radius: 6px;
+      padding: .15rem .6rem;
+      font-size: .78rem;
+      font-weight: 500;
+    }
+
+    .card-description {
+      font-size: .88rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .card-link {
+      display: inline-block;
+      margin-top: .9rem;
+      color: var(--accent);
+      font-size: .88rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .card-link:hover { color: var(--brand); text-decoration: underline; }
+
+    /* ── API config section ── */
+    .api-config {
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+      font-size: .88rem;
+    }
+    .api-config summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--muted);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+    .api-config summary::before { content: '⚙️'; }
+    .api-config summary::-webkit-details-marker { display: none; }
+    .api-config .config-body { margin-top: 1rem; }
+    .api-config input {
+      width: 100%;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: .6rem .9rem;
+      font-size: .9rem;
+      font-family: monospace;
+      margin-top: .4rem;
+    }
+    .api-config input:focus { outline: none; border-color: var(--accent); }
+    .api-config .hint { color: var(--muted); margin-top: .4rem; font-size: .8rem; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: .82rem;
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.35rem; }
+      .search-card { padding: 1.25rem; }
+      .assessment-card { padding: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🎯</div>
+  <h1>SHL Assessment Recommender</h1>
+  <p>AI-powered assessment matching using RAG + vector search</p>
+</header>
+
+<main>
+
+  <!-- API URL config (collapsed by default) -->
+  <details class="api-config" id="apiConfig">
+    <summary>API Configuration</summary>
+    <div class="config-body">
+      <label for="apiUrl"><strong>Backend API URL</strong></label>
+      <input type="url" id="apiUrl" placeholder="https://your-app.onrender.com" />
+      <p class="hint">
+        Enter your Render (or other) backend URL. Saved in browser storage.
+        Deploy the backend from the
+        <a href="https://github.com" target="_blank" rel="noopener">GitHub repo</a>
+        using <code>render.yaml</code>.
+      </p>
+    </div>
+  </details>
+
+  <!-- Search -->
+  <div class="search-card">
+    <label for="queryInput">📋 Describe the job role or paste a job description</label>
+    <textarea
+      id="queryInput"
+      placeholder="e.g. I need to hire a Java developer with 2 years of experience. The assessment should be under 40 minutes and support remote testing."
+    ></textarea>
+    <div class="search-actions">
+      <button class="btn-primary" id="searchBtn" onclick="search()">
+        🔍 Find Assessments
+      </button>
+      <div class="examples">
+        Try:
+        <span onclick="setExample(0)">Java developer</span>,
+        <span onclick="setExample(1)">Customer service role</span>,
+        <span onclick="setExample(2)">Data analyst</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results area -->
+  <div id="results"></div>
+
+</main>
+
+<footer>
+  SHL Assessment Recommendation System &mdash; Powered by RAG + FAISS + Perplexity AI
+</footer>
+
+<script>
+  /* ── Example queries ── */
+  const EXAMPLES = [
+    "I need to hire a mid-level Java developer. The assessment should cover programming skills, problem solving, and take under 45 minutes. Remote proctoring is required.",
+    "Looking for a customer service representative. Need assessments for communication skills, emotional intelligence, and situational judgment. Max 30 minutes.",
+    "Hiring a senior data analyst. Need tests covering SQL, Python, statistical reasoning, and data interpretation. Assessment should be comprehensive, up to 60 minutes."
+  ];
+
+  function setExample(i) {
+    document.getElementById('queryInput').value = EXAMPLES[i];
+    document.getElementById('queryInput').focus();
+  }
+
+  /* ── API URL persistence ── */
+  const urlInput = document.getElementById('apiUrl');
+  const STORAGE_KEY = 'shl_api_url';
+
+  function getApiBase() {
+    const val = urlInput.value.trim().replace(/\/$/, '');
+    return val || '';
+  }
+
+  // Load saved URL
+  urlInput.value = localStorage.getItem(STORAGE_KEY) || '';
+  urlInput.addEventListener('change', () => {
+    localStorage.setItem(STORAGE_KEY, urlInput.value.trim());
+  });
+
+  /* ── Search ── */
+  async function search() {
+    const query = document.getElementById('queryInput').value.trim();
+    if (!query) {
+      alert('Please enter a job description or query.');
+      return;
+    }
+
+    const apiBase = getApiBase();
+    if (!apiBase) {
+      showError('⚙️ Please set your Backend API URL in the configuration section above.');
+      document.getElementById('apiConfig').open = true;
+      return;
+    }
+
+    const btn = document.getElementById('searchBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Searching…';
+
+    showLoading();
+
+    try {
+      const res = await fetch(`${apiBase}/api/v1/recommend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || err.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      renderResults(data.recommended_assessments || []);
+    } catch (err) {
+      showError(`❌ ${err.message}`);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 Find Assessments';
+    }
+  }
+
+  /* Allow Enter (Ctrl+Enter / Cmd+Enter) to submit */
+  document.getElementById('queryInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) search();
+  });
+
+  /* ── Render helpers ── */
+  function showLoading() {
+    document.getElementById('results').innerHTML = `
+      <div class="status">
+        <div class="spinner"></div><br/>
+        Analyzing your query and searching assessments…
+      </div>`;
+  }
+
+  function showError(msg) {
+    document.getElementById('results').innerHTML =
+      `<div class="error-banner">${escapeHtml(msg)}</div>`;
+  }
+
+  function renderResults(assessments) {
+    if (!assessments.length) {
+      document.getElementById('results').innerHTML =
+        `<div class="status">No assessments matched your query. Try rephrasing or broadening the description.</div>`;
+      return;
+    }
+
+    const cards = assessments.map((a, i) => buildCard(a, i + 1)).join('');
+    document.getElementById('results').innerHTML = `
+      <div class="results-header">
+        <h2>Recommended Assessments</h2>
+        <span class="count">${assessments.length} found</span>
+      </div>
+      ${cards}`;
+  }
+
+  function buildCard(a, rank) {
+    const duration  = a.duration  ? `⏱ ${a.duration} min` : null;
+    const remote    = a.remote_support;
+    const adaptive  = a.adaptive_support;
+    const types     = Array.isArray(a.test_type) ? a.test_type : [a.test_type].filter(Boolean);
+    const desc      = a.description || '';
+    const name      = a.name || 'Unknown Assessment';
+    const url       = a.url || '#';
+
+    const remoteBadge   = remote === 'Yes'
+      ? `<span class="badge badge-remote">✅ Remote</span>`
+      : `<span class="badge badge-no">🚫 On-site</span>`;
+
+    const adaptiveBadge = adaptive === 'Yes'
+      ? `<span class="badge badge-adaptive">⚡ Adaptive</span>`
+      : '';
+
+    const durationBadge = duration
+      ? `<span class="badge badge-duration">${duration}</span>` : '';
+
+    const tagHtml = types.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+
+    return `
+      <div class="assessment-card">
+        <div class="card-header">
+          <div class="card-rank">${rank}</div>
+          <div class="card-title">
+            <h3><a href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(name)}</a></h3>
+          </div>
+        </div>
+        <div class="card-meta">
+          ${durationBadge}
+          ${remoteBadge}
+          ${adaptiveBadge}
+        </div>
+        ${tagHtml ? `<div class="tags">${tagHtml}</div>` : ''}
+        ${desc ? `<p class="card-description">${escapeHtml(desc.slice(0, 300))}${desc.length > 300 ? '…' : ''}</p>` : ''}
+        <a class="card-link" href="${escapeHtml(url)}" target="_blank" rel="noopener">
+          View on SHL →
+        </a>
+      </div>`;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+
+</body>
+</html>

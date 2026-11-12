@@ -1,0 +1,24 @@
+# Netlify configuration — deploys the frontend/ directory as a static site
+
+[build]
+  # Only the frontend folder is deployed; no build step needed
+  publish = "frontend"
+  # No build command — pure static HTML
+  command = ""
+
+# Redirect rule: catch-all SPA fallback (not strictly needed for single-page,
+# but good practice if more pages are added)
+[[redirects]]
+  from = "/*"
+  to   = "/index.html"
+  status = 200
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    Permissions-Policy     = "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src *; img-src 'self' data:;"
