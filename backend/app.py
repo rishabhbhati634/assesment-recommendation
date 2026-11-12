@@ -2,6 +2,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sys
 import os
+import gc
+import threading
 import traceback
 
 # Add backend to path
@@ -23,17 +25,21 @@ CORS(app)
 df = None
 embeddings = None
 index = None
+_resource_lock = threading.Lock()
 
 def _ensure_resources():
-    """Load assessment data/embeddings/index on first use."""
+    """Load assessment data/embeddings/index on first use (thread-safe)."""
     global df, embeddings, index
     if df is None:
-        print("🚀 Loading RAG system...")
-        loaded_df, loaded_embeddings, loaded_index = load_rag_resources()
-        df = loaded_df
-        embeddings = loaded_embeddings
-        index = loaded_index
-        print(f"✅ Loaded {len(df)} assessments")
+        with _resource_lock:
+            if df is None:
+                print("🚀 Loading RAG system...")
+                loaded_df, loaded_embeddings, loaded_index = load_rag_resources()
+                df = loaded_df
+                embeddings = loaded_embeddings
+                index = loaded_index
+                gc.collect()
+                print(f"✅ Loaded {len(df)} assessments")
 
 # ============================================
 # API v1 Endpoints (As per specification)

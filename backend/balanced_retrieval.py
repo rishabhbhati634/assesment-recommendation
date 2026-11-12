@@ -3,8 +3,9 @@ import pandas as pd
 import numpy as np
 import faiss
 import re
+import threading
+import gc
 from sentence_transformers import SentenceTransformer
-from sklearn.preprocessing import normalize
 from collections import Counter, defaultdict
 import ast
 from config import Config
@@ -15,11 +16,19 @@ from config import Config
 MODEL_NAME = "all-MiniLM-L6-v2"
 
 _model = None
+_model_lock = threading.Lock()
 
 def get_model():
     global _model
     if _model is None:
-        _model = SentenceTransformer(MODEL_NAME)
+        with _model_lock:
+            if _model is None:
+                try:
+                    import torch
+                    torch.set_num_threads(1)
+                except Exception:
+                    pass
+                _model = SentenceTransformer(MODEL_NAME, model_kwargs={"low_cpu_mem_usage": True})
     return _model
 
 def load_resources():
@@ -221,7 +230,8 @@ def query_to_embedding(query_text, normalize_vec=True):
     q = str(query_text).strip()
     q_emb = get_model().encode([q], convert_to_numpy=True, show_progress_bar=False)
     if normalize_vec:
-        q_emb = normalize(q_emb, axis=1)
+        norms = np.linalg.norm(q_emb, axis=1, keepdims=True)
+        q_emb = q_emb / np.clip(norms, 1e-12, None)
     return q_emb.astype(np.float32)
 
 def search_single_query(query_text, index, df, top_k=50):
