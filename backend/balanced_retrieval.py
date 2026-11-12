@@ -13,7 +13,14 @@ from config import Config
 # Load Model
 # ============================================
 MODEL_NAME = "all-MiniLM-L6-v2"
-model = SentenceTransformer(MODEL_NAME)
+
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        _model = SentenceTransformer(MODEL_NAME)
+    return _model
 
 def load_resources():
     """Load all necessary resources using Config paths"""
@@ -212,7 +219,7 @@ def extract_key_sections(text):
 def query_to_embedding(query_text, normalize_vec=True):
     """Convert query to normalized embedding"""
     q = str(query_text).strip()
-    q_emb = model.encode([q], convert_to_numpy=True, show_progress_bar=False)
+    q_emb = get_model().encode([q], convert_to_numpy=True, show_progress_bar=False)
     if normalize_vec:
         q_emb = normalize(q_emb, axis=1)
     return q_emb.astype(np.float32)

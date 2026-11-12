@@ -7,29 +7,33 @@ import traceback
 # Add backend to path
 sys.path.append(os.path.dirname(__file__))
 
-from rag_system import rag_search, load_resources, extract_entities
-from balanced_retrieval import load_resources, adaptive_search, classify_query_intent, balance_recommendations
+from rag_system import rag_search, load_resources as load_rag_resources, extract_entities, format_recommendations_for_api
+from balanced_retrieval import adaptive_search, classify_query_intent, balance_recommendations
 from config import Config
 from flask import Flask, request, jsonify, Response
 import json
 # and import sanitize_for_json from perplexity_integration
 from perplexity_integration import hybrid_recommendation_system, sanitize_for_json
 
-from rag_system import (
-    rag_search, 
-    load_resources, 
-    extract_entities,
-    format_recommendations_for_api
-)
-from config import Config
-
 app = Flask(__name__)
 CORS(app)
 
-# Load resources at startup
-print("🚀 Loading RAG system...")
-df, embeddings, index = load_resources()
-print(f"✅ Loaded {len(df)} assessments")
+# Load resources lazily so the WSGI app can bind its port quickly on Render.
+# Heavy data/model loading happens on the first request instead of at import time.
+df = None
+embeddings = None
+index = None
+
+def _ensure_resources():
+    """Load assessment data/embeddings/index on first use."""
+    global df, embeddings, index
+    if df is None:
+        print("🚀 Loading RAG system...")
+        loaded_df, loaded_embeddings, loaded_index = load_rag_resources()
+        df = loaded_df
+        embeddings = loaded_embeddings
+        index = loaded_index
+        print(f"✅ Loaded {len(df)} assessments")
 
 # ============================================
 # API v1 Endpoints (As per specification)
@@ -82,6 +86,7 @@ def recommend():
     }
     """
     try:
+        _ensure_resources()
         # Validate request
         if not request.is_json:
             return jsonify({
@@ -162,6 +167,7 @@ def extract():
     Extracts entities like skills, duration, job level from query
     """
     try:
+        _ensure_resources()
         data = request.get_json()
         query = data.get('query', '')
         
@@ -177,6 +183,7 @@ def stats():
     System Statistics Endpoint (Optional - for monitoring)
     """
     try:
+        _ensure_resources()
         return jsonify({
             "total_assessments": len(df),
             "embedding_dimension": embeddings.shape[1],
